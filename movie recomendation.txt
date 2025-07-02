@@ -1,0 +1,34 @@
+from surprise import SVD, Dataset, Reader
+from surprise.model_selection import train_test_split
+from surprise.model_selection import cross_validate
+from collections import defaultdict
+
+# Load built-in MovieLens data (100k dataset)
+data = Dataset.load_builtin('ml-100k')
+trainset, testset = train_test_split(data, test_size=0.25)
+
+# Use SVD algorithm
+model = SVD()
+model.fit(trainset)
+predictions = model.test(testset)
+
+# Function to get top-N recommendations
+def get_top_n(predictions, n=5):
+    top_n = defaultdict(list)
+    for uid, iid, true_r, est, _ in predictions:
+        top_n[uid].append((iid, est))
+
+    # Sort and pick top N
+    for uid, user_ratings in top_n.items():
+        user_ratings.sort(key=lambda x: x[1], reverse=True)
+        top_n[uid] = user_ratings[:n]
+    return top_n
+
+# Get top-5 movie recommendations for each user
+top_n = get_top_n(predictions, n=5)
+
+# Print recommendations for one user
+user_id = list(top_n.keys())[0]
+print(f"Top 5 recommendations for User {user_id}:")
+for movie_id, rating in top_n[user_id]:
+    print(f"  Movie ID: {movie_id}, Predicted Rating: {rating:.2f}")
