@@ -1,0 +1,42 @@
+import yfinance as yf
+import pandas as pd
+import numpy as np
+from sklearn.linear_model import LinearRegression
+import matplotlib.pyplot as plt
+from datetime import timedelta
+
+# Download stock data (example: Apple Inc.)
+ticker = 'AAPL'
+data = yf.download(ticker, start='2020-01-01', end='2024-12-31')
+
+# Reset index to get 'Date' column
+data.reset_index(inplace=True)
+
+# Convert Date to numeric
+data['Days'] = (data['Date'] - data['Date'].min()).dt.days
+X = data[['Days']]
+y = data['Close']
+
+# Train model
+model = LinearRegression()
+model.fit(X, y)
+
+# Predict future (next 30 days)
+last_day = data['Days'].iloc[-1]
+future_days = np.arange(last_day + 1, last_day + 31).reshape(-1, 1)
+future_preds = model.predict(future_days)
+
+# Create future dates
+future_dates = [data['Date'].iloc[-1] + timedelta(days=i) for i in range(1, 31)]
+
+# Plot historical + predicted
+plt.figure(figsize=(10,5))
+plt.plot(data['Date'], y, label="Historical", color="blue")
+plt.plot(future_dates, future_preds, label="Predicted", color="green", linestyle="--")
+plt.xlabel("Date")
+plt.ylabel("Stock Price")
+plt.title(f"{ticker} Stock Price Prediction")
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
